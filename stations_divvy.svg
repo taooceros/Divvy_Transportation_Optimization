@@ -772,6 +772,6 @@
 <line x1='641.43' y1='346.06' x2='644.88' y2='346.06' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
 <line x1='655.25' y1='376.38' x2='658.71' y2='376.38' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
 <line x1='655.25' y1='346.06' x2='658.71' y2='346.06' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
-<text x='80.64' y='14.94' style='font-size: 13.20px; font-family: "Arial";' textLength='151.78px' lengthAdjust='spacingAndGlyphs'>Location of Divvy Stations</text>
+<text x='80.64' y='14.94' style='font-size: 13.20px; font-family: "Arial";' textLength='151.78px' lengthAdjust='spacingAndGlyphs'>Locations of Divvy Stations</text>
 </g>
 </svg>

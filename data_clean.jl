@@ -10,16 +10,13 @@ Pkg.add("Plots")
 Pkg.add("StatsPlots")
 
 
-##
-using DataFrames, CSV, DataFramesMeta
-using Dates
-using Statistics
+
 
 ##
 
 # Read in the data
 
-stations = CSV.read("../data/Divvy_Bicycle_Stations.csv", DataFrame)
+stations = CSV.read("Divvy_Bicycle_Stations.csv", DataFrame)
 
 ##
 
@@ -28,38 +25,53 @@ stations = CSV.read("../data/Divvy_Bicycle_Stations.csv", DataFrame)
 end
 
 ##
+using DataFrames, CSV, DataFramesMeta
+using Dates
+using Statistics
+using Gadfly
 
 # Read trip data
 
-trips = CSV.read("Divvy_Trips.csv", DataFrame)
+trips_2022_05 = CSV.read("202205-divvy-tripdata.csv", DataFrame)
+trips_2023_03 = CSV.read("202303-divvy-tripdata.csv", DataFrame)
 
+time_format = dateformat"yyyy-mm-dd HH:MM:SS"
 
-for col_name in names(trips)
-    if occursin(" ", col_name)
-        new_col_name = lowercase(replace(col_name, " " => "_"))
-        @rename!(trips, $new_col_name = $col_name)
-    end
+trips = (trips_2022_05, trips_2023_03)
+
+for trip in trips
+    @transform!(trip, :started_at = Dates.DateTime.(:started_at, time_format))
+    @transform!(trip, :ended_at = Dates.DateTime.(:ended_at, time_format))
+    @transform!(trip, :started_hour = Dates.hour.(:started_at))
+    @transform!(trip, :ended_hour = Dates.hour.(:ended_at))
+    @transform!(trip, :started_day_of_week = Dates.dayofweek.(:started_at))
+    @transform!(trip, :ended_day_of_week = Dates.dayofweek.(:ended_at))
+    @transform!(trip, :started_month = Dates.month.(:started_at))
+    @transform!(trip, :ended_month = Dates.month.(:ended_at))
+    @transform!(trip, :trip_length = Dates.value.(:ended_at - :started_at) / 1000 / 60)
 end
 
-
-time_format = dateformat"mm/dd/yyyy HH:MM:SS p"
-
-@transform!(trips, :start_time = Dates.DateTime.(:start_time, time_format))
-@transform!(trips, :stop_time = Dates.DateTime.(:stop_time, time_format))
-@transform!(trips, :start_hour = Dates.hour.(:start_time))
-@transform!(trips, :stop_hour = Dates.hour.(:stop_time))
-@transform!(trips, :start_day_of_week = Dates.dayofweek.(:start_time))
-@transform!(trips, :stop_day_of_week = Dates.dayofweek.(:stop_time))
-@transform!(trips, :start_month = Dates.month.(:start_time))
-@transform!(trips, :stop_month = Dates.month.(:stop_time))
+dropmissing!.(trips)
 
 ##
 
-@subset! trips :start_time .>= DateTime(2019, 1, 1)
+station_data = @chain trips_2022_05 begin
+    groupby(:start_station_id)
+    @combine begin
+        :total_trips = length(:start_station_id)
+        :avg_trip_length = mean(:trip_length)
+        :median_trip_length = median(:trip_length)
+        :long_trip = mean(:trip_length .> 30)
+        :start_lng = first(:start_lng)
+        :start_lat = first(:start_lat)
+    end
+    @subset :total_trips .> 100
+end
+
+Gadfly.plot(station_data, x=:start_lng, y=:start_lat, color=:total_trips, Geom.point)
 
 ##
 
-@transform!(trips, :trip_length = Dates.value.(:stop_time - :start_time) / 1000 / 60)
 
 # group by bike id and find the average trip length
 
