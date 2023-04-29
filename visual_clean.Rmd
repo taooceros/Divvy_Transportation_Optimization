@@ -1,0 +1,50 @@
+---
+title: "Visualization & Cleaning"
+author: "Jiahe (Stephen) Ling"
+date: "2023-04-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+library(ggplot2)
+data <- read.csv("../data/202205-divvy-tripdata.csv")
+stations <- read.csv("../data/Divvy_Bicycle_Stations.csv")
+chicago <- read_sf("../data/Boundaries - Community Areas (current).geojson")
+```
+
+# Station Statistics
+
+* Original: start (1051), end (1055), total (1067)
+
+```{r}
+colnames(station_start)[1] <- "ID"
+colnames(station_end)[1] <- "ID"
+rbind(station_start, station_end) %>% distinct(ID)
+```
+
+* Dropping NAs: start (298), end (303), total (305)
+
+```{r}
+station_start <- data %>% group_by(start_station_id) %>% count()
+station_end <- data %>% group_by(end_station_id) %>% count()
+# Merge data frames together
+stations_start <- merge(x = stations, y = station_start, by.x = "ID", by.y = "start_station_id")
+stations_end <- merge(x = stations, y = station_end, by.x = "ID", by.y = "end_station_id")
+stations_total <- rbind(stations_start, stations_end)
+rbind(stations_start, stations_end) %>% distinct(ID)
+```
+
+# Visualization
+
+```{r}
+ggplot() + 
+  geom_sf(data = chicago, fill = "ivory", colour = "grey") +
+  geom_point(data = stations_total, aes(x = Longitude, y = Latitude, color = n), size = 0.5, alpha=1) +
+  scale_colour_gradientn(colors=c("yellow", "orange", "red")) +
+  ggtitle("Location of Divvy Stations")
+
+station
+```
