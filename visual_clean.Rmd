@@ -31,10 +31,19 @@ rbind(station_start, station_end) %>% distinct(ID)
 station_start <- data %>% group_by(start_station_id) %>% count()
 station_end <- data %>% group_by(end_station_id) %>% count()
 # Merge data frames together
-stations_start <- merge(x = stations, y = station_start, by.x = "ID", by.y = "start_station_id")
-stations_end <- merge(x = stations, y = station_end, by.x = "ID", by.y = "end_station_id")
+stations_start <- merge(x = stations, y = station_start, by.x = "ID", by.y = "start_station_id") %>% mutate(Identity = "start_station")
+stations_end <- merge(x = stations, y = station_end, by.x = "ID", by.y = "end_station_id") %>% mutate(Identity = "end_station")
 stations_total <- rbind(stations_start, stations_end)
-rbind(stations_start, stations_end) %>% distinct(ID)
+nrow(rbind(stations_start, stations_end) %>% distinct(ID))
+```
+
+# Generate Required Data
+
+```{r}
+sd_day_avg <- stations_total %>% 
+  select(ID, n, Identity) %>% 
+  mutate(supply = ceiling(n*(Identity == "start_station") / 31), 
+         demand = ceiling(n*(Identity == "end_station") / 31))
 ```
 
 # Visualization
@@ -45,6 +54,4 @@ ggplot() +
   geom_point(data = stations_total, aes(x = Longitude, y = Latitude, color = n), size = 0.5, alpha=1) +
   scale_colour_gradientn(colors=c("yellow", "orange", "red")) +
   ggtitle("Location of Divvy Stations")
-
-station
 ```
